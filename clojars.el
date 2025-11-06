@@ -36,9 +36,7 @@
 (defun clojars-format-dependency (result)
   (let ((version (cdr (assoc 'version result)))
         (name (clojars-jar-name result)))
-    (if (string-match "deps.edn$" (buffer-file-name))
-        (format "%s {:mvn/version %S}" name version)
-        (format "[%s %S]" name version))))
+    (format "%s {:mvn/version %S}" name version)))
 
 (defun clojars-jar-result (result)
   (cons (clojars-format-dependency result) (clojars-jar-name result)))
@@ -50,21 +48,21 @@
   (interactive "sSearch Clojars: ")
   (message "Loading...")
   (deferred:$
-    (request-deferred
-     clojars-search-endpoint
-     :params `(("q" . ,query) ("format" . "json"))
-     :parser 'json-read
-     :sync   t)
-    (deferred:nextc it
-      (lambda (response)
-        (let ((results (cdr (assoc 'results (request-response-data response)))))
-	  (if (= 0 (length results))
-	      (message "No clojars found with that name")
-	    (progn
-	      (kill-new (completing-read "Results [TAB to complete]: "
-					 (mapcar 'clojars-jar-result results)
-					 nil 'confirm-after-completion))
-	      (message "You've copied: %s clojar" (car kill-ring)))))))))
+   (request-deferred
+    clojars-search-endpoint
+    :params `(("q" . ,query) ("format" . "json"))
+    :parser 'json-read
+    :sync   t)
+   (deferred:nextc it
+                   (lambda (response)
+                     (let ((results (cdr (assoc 'results (request-response-data response)))))
+                       (if (= 0 (length results))
+                           (message "No clojars found with that name")
+                         (progn
+                           (kill-new (completing-read "Results [TAB to complete]: "
+                                                      (mapcar 'clojars-jar-result results)
+                                                      nil 'confirm-after-completion))
+                           (message "You've copied: %s clojar" (car kill-ring)))))))))
 
 (provide 'clojars)
 
